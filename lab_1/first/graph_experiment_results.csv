@@ -1,0 +1,10 @@
+Scenario,Algorithm,Nodes Visited,Path Length,Cost
+Normal,BFS,107,13,-
+Normal,Dijkstra,13,13,4.5667
+Normal,A*,13,13,4.5667
+Safety-Priority,BFS,107,13,-
+Safety-Priority,Dijkstra,19,19,7.0252
+Safety-Priority,A*,19,19,7.0252
+Gender-Priority,BFS,107,13,-
+Gender-Priority,Dijkstra,13,13,4.6427
+Gender-Priority,A*,13,13,4.6427
