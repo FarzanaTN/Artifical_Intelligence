@@ -57,9 +57,6 @@ ALGO_COLORS = {
     "IDA*":      PALETTE["route_idastar"],
 }
 
-# ============================================================================
-# 1. RISK MODEL  (traffic + safety + gender + age)
-# ============================================================================
 
 def edge_risk_multiplier(traffic, safety, gender, age):
     """
@@ -70,10 +67,6 @@ def edge_risk_multiplier(traffic, safety, gender, age):
     w1, w2, w3, w4 = 0.40, 0.25, 0.20, 0.15
     return 1 + (w1 * traffic + w2 * safety + w3 * gender + w4 * age)
 
-
-# ============================================================================
-# 2. DYNAMIC HEURISTIC
-# ============================================================================
 
 def heuristic(graph, node, goal):
     """
@@ -243,25 +236,32 @@ def dfs(graph, start, goal):
 # Explores up to `limit` hops deep; no cost or heuristic.
 # g(n) = hop count (implicit depth), h(n) = 0.
 # ----------------------------------------------------------------------------
-def dls(graph, start, goal, limit=30):
-    """Depth-Limited Search — iterative implementation."""
+
+def dls(graph, start, goal, limit):
+    # Stack stores tuples of (node, current_depth)
     stack = [(start, 0)]
-    vis   = {start}
-    cf    = {start: None}
+    vis = {start: 0} # Track node: depth_found_at
+    cf = {start: None}
     count = 0
+    
     while stack:
         node, depth = stack.pop()
         count += 1
+        
         if node == goal:
             return reconstruct_path(cf, goal), count
+        
+        # Only expand neighbors if we haven't hit the depth limit
         if depth < limit:
             for n in graph.neighbors(node):
+                # Standard DLS allows revisiting nodes if found at a shallower depth,
+                # but for a basic conversion, we check if it's unvisited.
                 if n not in vis:
-                    vis.add(n)
+                    vis[n] = depth + 1
                     cf[n] = node
                     stack.append((n, depth + 1))
+                    
     return None, count
-
 
 # ── IDDFS ────────────────────────────────────────────────────────────────────
 # f(n) usage: NONE (iterative deepening over hop depth).
@@ -289,7 +289,7 @@ def iddfs(graph, start, goal, max_depth=60):
 # ----------------------------------------------------------------------------
 def ucs(graph, start, goal):
     pq      = [(0, start)]
-    g       = {start: 0}
+    g       = {start: 0}        #g(n)
     cf      = {start: None}
     visited = {}
     count   = 0
@@ -305,7 +305,7 @@ def ucs(graph, start, goal):
             new_cost = cost + graph[node][n][0]["cost"]
             if n not in g or new_cost < g[n]:
                 g[n]  = new_cost
-                cf[n] = node
+                cf[n] = node                    # parent
                 heapq.heappush(pq, (new_cost, n))
     return None, count
 
@@ -367,7 +367,8 @@ def weighted_a_star(graph, start, goal, weight=1.5):
 # ----------------------------------------------------------------------------
 def bidirectional_dijkstra(graph, start, goal):
     # Forward
-    pq_f  = [(0, start)];  g_f = {start: 0};  cf_f = {start: None};  vis_f = {}
+    pq_f  = [(0, start)];  g_f = {start: 0}     #best cost from start-> node
+    cf_f = {start: None};  vis_f = {}
     # Backward (reversed graph)
     rev_G = graph.reverse(copy=False)
     pq_b  = [(0, goal)];   g_b = {goal: 0};   cf_b = {goal: None};   vis_b = {}
@@ -527,9 +528,6 @@ def ida_star(graph, start, goal):
     return None, count[0]
 
 
-# ============================================================================
-# 7. VISUALISATION — ATTRACTIVE GRAPH PLOTS
-# ============================================================================
 
 def _dark_fig(figsize=(14, 10)):
     fig, ax = plt.subplots(figsize=figsize, facecolor=PALETTE["bg"])
@@ -786,8 +784,8 @@ def run_all():
     algos = [
         ("BFS",      lambda: bfs(G, start, goal)),
         ("DFS",      lambda: dfs(G, start, goal)),
-        ("DLS",      lambda: dls(G, start, goal, limit=35)),
-        ("IDDFS",    lambda: iddfs(G, start, goal, max_depth=70)),
+        ("DLS",      lambda: dls(G, start, goal, limit=40)),
+        ("IDDFS",    lambda: iddfs(G, start, goal, max_depth=40)),
         ("UCS",      lambda: ucs(G, start, goal)),
         ("Greedy",   lambda: greedy_bfs(G, start, goal)),
         ("WeightedA*",lambda: weighted_a_star(G, start, goal, weight=1.5)),
@@ -810,7 +808,9 @@ def run_all():
         algo_paths.append((name, path))
 
         status = f"{len(path)} nodes in path, cost={cost:.1f}" if path else "NO PATH"
-        print(f"  {name:<12} | {elapsed:7.1f} ms | {count:5} explored | {status}")
+        print(f"  {name:<12} | {elapsed:7.1f} ms | {status}")
+
+        # print(f"  {name:<12} | {elapsed:7.1f} ms | {count:5} explored | {status}")
 
         if path:
             plot_route(G, path, name)
@@ -823,7 +823,9 @@ def run_all():
 
     # ── Summary table ──────────────────────────────────────────────────────
     print("\n" + "=" * 72)
-    print(f"{'Algorithm':<14} {'Time(ms)':>9} {'Explored':>10} {'PathCost':>12}  f(n) formula")
+    print(f"{'Algorithm':<14} {'Time(ms)':>9}  {'PathCost':>12}  f(n) formula")
+
+    # print(f"{'Algorithm':<14} {'Time(ms)':>9} {'Explored':>10} {'PathCost':>12}  f(n) formula")
     print("=" * 72)
     fn_notes = {
         "BFS":       "No f(n)  — FIFO hop-count",
