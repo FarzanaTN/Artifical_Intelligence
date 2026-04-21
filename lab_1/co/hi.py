@@ -10,8 +10,19 @@ import random
 # ============================================================================
 # SETUP
 # ============================================================================
-OUTPUT_FOLDER = "assignment_output"
+# OUTPUT_FOLDER = "assignment_output"
+# os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# Get the directory where the current script is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Create folder path inside it
+OUTPUT_FOLDER = os.path.join(BASE_DIR, "assignment_output")
+
+# Make the folder
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+print("Folder created at:", OUTPUT_FOLDER)
 
 random.seed(42)
 
@@ -20,18 +31,13 @@ random.seed(42)
 # ============================================================================
 
 def edge_risk_multiplier(traffic, safety):
-    """
-    Real-world edge risk used in ACTUAL cost (g(n)).
-    """
+  
     w1, w2 = 0.6, 0.4
     return 1 + (w1 * traffic + w2 * safety)
 
 
 def heuristic_risk_factor():
-    """
-    Estimated average risk used in heuristic h(n).
-    Must be a LOWER/AVERAGE estimate (not exact edge values).
-    """
+   
     return 1.3
 
 
@@ -76,10 +82,7 @@ def load_mirpur_map():
 # ============================================================================
 
 def heuristic(graph, node, goal):
-    """
-    h(n) = straight-line distance × estimated risk factor
-    (includes risk as instructed by your professor)
-    """
+    
     n1 = graph.nodes[node]
     n2 = graph.nodes[goal]
 
@@ -224,9 +227,6 @@ def weighted_a_star(graph, start, goal, weight=1.5):
     return None, count
 
 
-# ============================================================================
-# 6. PLOTTING (NO POPUPS)
-# ============================================================================
 
 def plot_route(G, path, name):
     fig, ax = ox.plot_graph_route(
@@ -261,10 +261,6 @@ def plot_complexities(results):
     plt.savefig(f"{OUTPUT_FOLDER}/space_complexity.png")
     plt.close()
 
-
-# ============================================================================
-# 7. MAIN RUNNER
-# ============================================================================
 
 def run_all():
     G = load_mirpur_map()
@@ -301,9 +297,6 @@ def run_all():
     print("DONE → All outputs saved in:", OUTPUT_FOLDER)
 
 
-# ============================================================================
-# ENTRY
-# ============================================================================
 
 if __name__ == "__main__":
     run_all()
