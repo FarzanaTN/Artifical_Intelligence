@@ -12,7 +12,7 @@ random.seed(42)
 def edge_risk_multiplier(traffic: float, safety: float,
                          gender: float, age: float) -> float:
    
-    return 1 + (0.40 * traffic + 0.25 * safety + 0.20 * gender + 0.15 * age)
+    return 1 + (0.16 * traffic + 1 * safety + 0.80 * gender + 0.9 * age)
 
 
 
@@ -38,7 +38,8 @@ def heuristic(graph, node, goal) -> float:
                 length = edata.get("length", 1)
                 cost   = edata.get("cost", length)
                 cpm.append(cost / max(length, 1))
-        local_risk = sum(cpm) / len(cpm) if cpm else 1.0
+        # local_risk = sum(cpm) / len(cpm) if cpm else 1.0
+        local_risk = min(cpm) if cpm else 1.0 
     else:
         local_risk = 1.0
 

@@ -23,10 +23,7 @@ from visu import (
 
 
 def build_algo_list(G, start, goal) -> list:
-    """
-    Returns a list of (name, callable) pairs.
-    Add or remove entries here to change which algorithms run.
-    """
+   
     return [
         ("BFS",        lambda: bfs(G, start, goal)),
         ("DFS",        lambda: dfs(G, start, goal)),

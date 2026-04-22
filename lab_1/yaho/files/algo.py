@@ -6,9 +6,6 @@ import math
 from graph import heuristic, reconstruct_path
 
 
-# ============================================================================
-# UNINFORMED SEARCH
-# ============================================================================
 
 def bfs(graph, start, goal):
     
@@ -132,12 +129,7 @@ def iddfs(graph, start, goal, max_depth: int = 60):
 
 
 def ucs(graph, start, goal):
-    """
-    Uniform Cost Search  (Dijkstra)
-    f(n) = g(n)   [h(n) = 0]
-    Time  ~ O((V + E) log V) — heap operations over all reachable nodes.
-    Space ~ O(V)             — open list can hold every reachable node.
-    """
+   
     pq      = [(0, start)]
     g       = {start: 0}
     cf      = {start: None}
