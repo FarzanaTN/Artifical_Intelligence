@@ -61,9 +61,38 @@ STATIONS = [
     {"id": 4, "name": "Shewrapara\nRupsa",  "x": 0.20, "y": 0.38, "demand": 850,  "priority": 3},
     {"id": 5, "name": "Pallabi\nBrahma",    "x": 0.58, "y": 0.35, "demand": 950,  "priority": 4},
     {"id": 6, "name": "Mirpur-14\nTista",   "x": 0.80, "y": 0.28, "demand": 700,  "priority": 2},
+
+    # ───── Added 13 new stations (7–19) ─────
+    {"id": 7,  "name": "Mirpur-11\nBuriganga", "x": 0.10, "y": 0.70, "demand": 800, "priority": 3},
+    {"id": 8,  "name": "Mirpur-12\nKarnafuli", "x": 0.30, "y": 0.72, "demand": 720, "priority": 2},
+    {"id": 9,  "name": "Mirpur-13\nSurma",     "x": 0.48, "y": 0.75, "demand": 680, "priority": 2},
+    {"id": 10, "name": "Rupnagar\nTeesta",     "x": 0.65, "y": 0.78, "demand": 900, "priority": 4},
+    {"id": 11, "name": "Shyamoli\nPadma-2",    "x": 0.15, "y": 0.55, "demand": 760, "priority": 3},
+    {"id": 12, "name": "Adabor\nMeghna-2",     "x": 0.35, "y": 0.52, "demand": 820, "priority": 3},
+    {"id": 13, "name": "Mohammadpur\nJamuna-2","x": 0.55, "y": 0.50, "demand": 880, "priority": 4},
+    {"id": 14, "name": "Agargaon\nRupsa-2",    "x": 0.75, "y": 0.55, "demand": 640, "priority": 2},
+    {"id": 15, "name": "Sher-e-Bangla\nTista-2","x": 0.85, "y": 0.60, "demand": 700, "priority": 2},
+    {"id": 16, "name": "Kallyanpur\nBuriganga-2","x": 0.25, "y": 0.30, "demand": 780, "priority": 3},
+    {"id": 17, "name": "Technical\nKarnafuli-2","x": 0.45, "y": 0.28, "demand": 850, "priority": 4},
+    {"id": 18, "name": "Gabtoli\nSurma-2",     "x": 0.65, "y": 0.25, "demand": 900, "priority": 5},
+    {"id": 19, "name": "Darussalam\nPadma-3",  "x": 0.85, "y": 0.30, "demand": 750, "priority": 3},
 ]
 
-EDGES = [(0,2),(1,2),(2,3),(2,4),(2,5),(3,5),(4,5),(5,6),(1,3)]
+
+
+EDGES = [
+    (0,2),(1,2),(2,3),(2,4),(2,5),(3,5),(4,5),(5,6),(1,3),
+
+    # ─── Chain expansion for new stations ───
+    (6,7),(7,8),(8,9),(9,10),
+    (10,13),(13,14),(14,15),
+    (4,11),(11,12),(12,13),
+    (16,17),(17,18),(18,19),
+
+    # ─── Cross-links (make graph CSP-hard, not linear) ───
+    (2,8),(5,12),(8,13),(10,14),(11,16),(13,17),(14,18)
+]
+
 
 N = len(STATIONS)
 
@@ -73,8 +102,12 @@ MIN_PER_STAT  = 200
 DOMAIN_STEP   = 50
 MAX_BINARY_DIFF = 0.20
 
-COLORS = ["#4f8ef7","#7c5cf7","#fb923c","#34d399","#fbbf24","#f87171","#a78bfa"]
-
+COLORS = [
+    "#4f8ef7","#7c5cf7","#fb923c","#34d399","#fbbf24",
+    "#f87171","#a78bfa","#60a5fa","#f472b6","#22c55e",
+    "#eab308","#38bdf8","#a78bfa","#fb7185","#10b981",
+    "#f97316","#6366f1","#14b8a6","#facc15","#8b5cf6"
+]
 # Adjacency list (neighbours per station)
 NEIGHBOURS = {i: set() for i in range(N)}
 for (a, b) in EDGES:
@@ -1096,8 +1129,8 @@ def main():
 
     best = max(results, key=lambda x: x["sat"])
     print(f"\n  ★  Best algorithm: {best['name']}  ({best['sat']:.1f}% satisfaction)")
-    # print("\n  Note: Algorithm 2 shows the effect of AC-3 graph pruning")
-    # print("  and CBJ jump count.  Local Search is fastest by iteration count.")
+    print("\n  Note: Algorithm 2 shows the effect of AC-3 graph pruning")
+    print("  and CBJ jump count.  Local Search is fastest by iteration count.")
 
     plot_results(results, r2)
 
