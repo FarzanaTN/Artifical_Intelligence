@@ -31,6 +31,7 @@
 =======================================================
 """
 
+import os
 import time
 import random
 import copy
@@ -1010,7 +1011,13 @@ def plot_results(results_list, r2_detail):
             cell.set_facecolor("#1a1d27")
             cell.set_text_props(color="#e8eaf0")
 
-    plt.savefig("csp_results.png", dpi=150, bbox_inches="tight",
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    save_path = os.path.join(base_dir, "csp_results.png")
+
+    plt.savefig(save_path,
+                dpi=150,
+                bbox_inches="tight",
                 facecolor="#0f1117")
     print("\n  ✓  Plot saved → csp_results.png")
     plt.show()
