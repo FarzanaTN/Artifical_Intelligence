@@ -1112,11 +1112,11 @@ def main():
     print("\n" + "="*55)
     print("  ALGORITHM COMPARISON SUMMARY")
     print("="*55)
-    print(f"  {'Algorithm':<25} {'Nodes':>8} {'Time(ms)':>10} {'Sat%':>8} {'Viol':>6}")
+    print(f"  {'Algorithm':<25} {'Nodes':>8} {'Time(ms)':>10} {'Sat%':>8} ")
     print("  " + "─"*57)
     for r in results:
         print(f"  {r['name']:<25} {r['nodes']:>8,} {r['time']:>10.1f} "
-              f"{r['sat']:>8.1f} {r['viol']:>6}")
+              f"{r['sat']:>8.1f} ")
     if "jumps" in r2:
         print(f"\n  CBJ backjumps (Algorithm 2): {r2['jumps']:,}")
 

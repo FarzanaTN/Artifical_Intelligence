@@ -10,14 +10,7 @@
        + Intelligent Backtracking (Conflict-Directed Backjumping)
     3. Local Search (Min-Conflicts Heuristic)
 
-  NEW ADDITIONS vs original:
-    • AC-3 Arc Consistency  — prunes domains globally before
-      any search begins; visibly shrinks the constraint graph.
-    • Conflict-Directed Backjumping (CBJ) — replaces chronological
-      backtracking; on failure, jumps back to the deepest variable
-      actually responsible for the conflict (conflict set), skipping
-      irrelevant choices and reducing nodes explored drastically.
-
+ 
   CSP Formulation:
     Variables  : X_i = fuel allocated to station i  (i = 0..6)
     Domain     : D_i = {min_alloc, min+50, ..., max_alloc}  [discrete, finite]
@@ -80,6 +73,7 @@ NEIGHBOURS = {i: set() for i in range(N)}
 for (a, b) in EDGES:
     NEIGHBOURS[a].add(b)
     NEIGHBOURS[b].add(a)
+    
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -243,7 +237,7 @@ def print_ac3_report(original_domains, pruned_domains, removed, arc_log):
     print(f"  Total domain values after  : {total_after}")
     print(f"  Values pruned              : {total_pruned}  "
           f"({total_pruned/total_before*100:.1f}% reduction)")
-    print(f"  Arcs processed (log)       : {len(arc_log)}")
+    # print(f"  Arcs processed (log)       : {len(arc_log)}")
     print()
     for i, s in enumerate(STATIONS):
         name = s["name"].replace("\n", " ")
@@ -313,7 +307,7 @@ def run_backtracking():
     print(f"  Nodes explored : {nodes:,}")
     print(f"  Time           : {elapsed:.1f} ms")
     print(f"  Satisfaction   : {sat:.1f}%")
-    print(f"  Violations     : {viol}")
+    # print(f"  Violations     : {viol}")
     for i, s in enumerate(STATIONS):
         bar = "█" * int(result[i] / 50)
         print(f"    {s['name'].replace(chr(10),' '):22s}  {result[i]:4d}L  {bar}")
@@ -585,10 +579,10 @@ def run_heuristic():
     jumps  = stats["jumps"]
 
     print(f"\n  Nodes explored     : {nodes:,}")
-    print(f"  Backjumps (CBJ)    : {jumps:,}")
+    # print(f"  Backjumps (CBJ)    : {jumps:,}")
     print(f"  Time               : {elapsed:.1f} ms")
     print(f"  Satisfaction       : {sat:.1f}%")
-    print(f"  Violations         : {viol}")
+    # print(f"  Violations         : {viol}")
     for i, s in enumerate(STATIONS):
         bar = "█" * int(result[i] / 50)
         print(f"    {s['name'].replace(chr(10),' '):22s}  {result[i]:4d}L  {bar}")
@@ -722,7 +716,7 @@ def run_local_search():
     print(f"  Iterations     : {iterations:,}")
     print(f"  Time           : {elapsed:.1f} ms")
     print(f"  Satisfaction   : {sat:.1f}%")
-    print(f"  Violations     : {viol}")
+    # print(f"  Violations     : {viol}")
     for i, s in enumerate(STATIONS):
         bar = "█" * int(best_a[i] / 50)
         print(f"    {s['name'].replace(chr(10),' '):22s}  {best_a[i]:4d}L  {bar}")
@@ -1019,7 +1013,7 @@ def plot_results(results_list, r2_detail):
                 dpi=150,
                 bbox_inches="tight",
                 facecolor="#0f1117")
-    print("\n  ✓  Plot saved → csp_results.png")
+    # print("\n  ✓  Plot saved → csp_results.png")
     plt.show()
 
 
@@ -1049,6 +1043,7 @@ def print_constraint_report(r):
         mx   = max(alloc[a], alloc[b])
         pct  = diff / mx * 100 if mx else 0
         print(f"  {ok4} C5 {na:17s}↔{nb:17s}: Δ={pct:.1f}% (≤20%)")
+        print(build_domain())
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1057,9 +1052,9 @@ def print_constraint_report(r):
 
 def main():
     print("╔══════════════════════════════════════════════════════╗")
-    print("║   FUEL ALLOCATION CSP  —  Mirpur, Dhaka             ║")
+    print("║   FUEL ALLOCATION CSP  —  Mirpur, Dhaka              ║")
     print("║   Constraint Optimization Problem                    ║")
-    print("║   + AC-3 Preprocessing  + CBJ                       ║")
+    print("║   + AC-3 Preprocessing  + CBJ                        ║")
     print("╚══════════════════════════════════════════════════════╝")
     print(f"\n  Total supply  : {TOTAL_SUPPLY} L")
     print(f"  Stations      : {N}")
@@ -1084,8 +1079,8 @@ def main():
     for r in results:
         print(f"  {r['name']:<25} {r['nodes']:>8,} {r['time']:>10.1f} "
               f"{r['sat']:>8.1f} {r['viol']:>6}")
-    if "jumps" in r2:
-        print(f"\n  CBJ backjumps (Algorithm 2): {r2['jumps']:,}")
+    # if "jumps" in r2:
+    #     print(f"\n  CBJ backjumps (Algorithm 2): {r2['jumps']:,}")
 
     print("\n  AC-3 Effect:")
     total_before = sum(len(r2["original_domains"][i]) for i in range(N))
@@ -1095,7 +1090,7 @@ def main():
           f"({(total_before-total_after)/total_before*100:.1f}% pruned before search)")
 
     best = max(results, key=lambda x: x["sat"])
-    print(f"\n  ★  Best algorithm: {best['name']}  ({best['sat']:.1f}% satisfaction)")
+    # print(f"\n  ★  Best algorithm: {best['name']}  ({best['sat']:.1f}% satisfaction)")
     # print("\n  Note: Algorithm 2 shows the effect of AC-3 graph pruning")
     # print("  and CBJ jump count.  Local Search is fastest by iteration count.")
 
