@@ -38,8 +38,23 @@ GRID_SIZE = 6
 START = (0, 0)
 GOAL = (5, 5)
 
-DEEP_WATER = {(1, 3), (2, 2), (2, 3), (2, 4), (3, 2), (3, 3), (3, 4), (4, 3)}
-SHALLOW_WATER = {(1, 2), (1, 4), (2, 1), (2, 5), (3, 1), (3, 5), (4, 2), (4, 4)}
+DEEP_WATER = {
+    (1, 3),
+    (2, 3),
+    (3, 3)
+}
+
+SHALLOW_WATER = {
+    (2, 1),
+    (2, 2),
+    (3, 2),
+    (4, 2),
+    (4, 3),
+    (4, 4)
+}
+
+# DEEP_WATER = {(1, 3), (2, 2), (2, 3), (2, 4), (3, 2), (3, 3), (3, 4), (4, 3)}
+# SHALLOW_WATER = {(1, 2), (1, 4), (2, 1), (2, 5), (3, 1), (3, 5), (4, 2), (4, 4)}
 
 ACTIONS = ["up", "down", "left", "right"]
 ACTION_MOVES = {
@@ -50,7 +65,7 @@ ACTION_MOVES = {
 }
 
 STEP_REWARD = -0.04
-SHALLOW_REWARD = -0.3
+SHALLOW_REWARD = -0.05  #0.3
 DEEP_REWARD = -10
 GOAL_REWARD = 10
 
