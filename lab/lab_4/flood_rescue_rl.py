@@ -38,23 +38,8 @@ GRID_SIZE = 6
 START = (0, 0)
 GOAL = (5, 5)
 
-DEEP_WATER = {
-    (1, 3),
-    (2, 3),
-    (3, 3)
-}
-
-SHALLOW_WATER = {
-    (2, 1),
-    (2, 2),
-    (3, 2),
-    (4, 2),
-    (4, 3),
-    (4, 4)
-}
-
-# DEEP_WATER = {(1, 3), (2, 2), (2, 3), (2, 4), (3, 2), (3, 3), (3, 4), (4, 3)}
-# SHALLOW_WATER = {(1, 2), (1, 4), (2, 1), (2, 5), (3, 1), (3, 5), (4, 2), (4, 4)}
+DEEP_WATER = {(1, 3), (2, 2), (2, 3), (2, 4), (3, 2), (3, 3), (3, 4), (4, 3)}
+SHALLOW_WATER = {(1, 2), (1, 4), (2, 1), (2, 5), (3, 1), (3, 5), (4, 2), (4, 4)}
 
 ACTIONS = ["up", "down", "left", "right"]
 ACTION_MOVES = {
@@ -65,7 +50,7 @@ ACTION_MOVES = {
 }
 
 STEP_REWARD = -0.04
-SHALLOW_REWARD = -0.05 #0.3
+SHALLOW_REWARD = -0.3
 DEEP_REWARD = -10
 GOAL_REWARD = 10
 
@@ -274,24 +259,34 @@ def plot_paths(paths, titles, outcomes, filename):
     for ax, path, title, outcome in zip(axes, paths, titles, outcomes):
         draw_grid(ax)
 
-        visit_count = {}
-        xs, ys = [], []
-        for p in path:
-            n = visit_count.get(p, 0)
-            visit_count[p] = n + 1
-            offset_x = 0.12 * n * (1 if (p[0] + p[1]) % 2 == 0 else -1)
-            offset_y = 0.12 * n * (1 if p[0] % 2 == 0 else -1)
-            xs.append(p[1] + 0.5 + offset_x)
-            ys.append(p[0] + 0.5 + offset_y)
+        if outcome == "REACHED SHELTER" or outcome == "BOAT CAPSIZED (deep water)":
+            visit_count = {}
+            xs, ys = [], []
+            for p in path:
+                n = visit_count.get(p, 0)
+                visit_count[p] = n + 1
+                offset_x = 0.12 * n * (1 if (p[0] + p[1]) % 2 == 0 else -1)
+                offset_y = 0.12 * n * (1 if p[0] % 2 == 0 else -1)
+                xs.append(p[1] + 0.5 + offset_x)
+                ys.append(p[0] + 0.5 + offset_y)
 
-        ax.plot(xs, ys, color="black", linewidth=1.6, zorder=4, alpha=0.8)
-        ax.scatter(xs, ys, c=range(len(xs)), cmap="autumn_r", s=55,
-                   edgecolors="black", linewidths=0.6, zorder=5)
-        for i, (x, y) in enumerate(zip(xs, ys)):
-            ax.annotate(str(i), (x, y), fontsize=6.5, ha="center", va="center",
-                        zorder=6, fontweight="bold")
+            ax.plot(xs, ys, color="black", linewidth=1.6, zorder=4, alpha=0.8)
+            ax.scatter(xs, ys, c=range(len(xs)), cmap="autumn_r", s=55,
+                       edgecolors="black", linewidths=0.6, zorder=5)
+            for i, (x, y) in enumerate(zip(xs, ys)):
+                ax.annotate(str(i), (x, y), fontsize=6.5, ha="center", va="center",
+                            zorder=6, fontweight="bold")
+        else:
+            # Policy never reaches a real outcome (goal or capsize) - drawing the
+            # raw step trace here would be misleading, since with such a low gamma
+            # the "policy" is really just arbitrary tie-breaking, not a real route.
+            ax.text(GRID_SIZE / 2, GRID_SIZE / 2,
+                    "No coherent path -\npolicy is essentially\nundirected (gamma too\nlow to reach the goal)",
+                    ha="center", va="center", fontsize=9, color="black",
+                    bbox=dict(boxstyle="round", facecolor="white", edgecolor="gray", alpha=0.9),
+                    zorder=6)
 
-        ax.plot(xs[0], ys[0], marker="s", color=COLOR_START, markersize=14,
+        ax.plot(START[1] + 0.5, START[0] + 0.5, marker="s", color=COLOR_START, markersize=14,
                 markeredgecolor="black", zorder=6)
         ax.set_title(f"{title}\n{outcome} ({len(path)-1} steps)", fontsize=10)
     plt.tight_layout()
