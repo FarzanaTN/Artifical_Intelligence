@@ -232,8 +232,8 @@ def construct_solution():
 
         weights = []
         for n in neighbors:
-            tau = pheromone[current][n] ** ALPHA
-            eta = (1.0 / adj[current][n]["cost"]) ** BETA
+            tau = pheromone[current][n] ** ALPHA                    #pheromone^alpha
+            eta = (1.0 / adj[current][n]["cost"]) ** BETA           #heuristic^beta
             weights.append(tau * eta)
 
         total_w = sum(weights)

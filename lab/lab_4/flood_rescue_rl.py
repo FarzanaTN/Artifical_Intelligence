@@ -1,38 +1,34 @@
 """
-Flood Rescue GridWorld RL Assignment
---------------------------------------
-Problem: A rescue boat must navigate a 6x6 flooded neighborhood (inspired by
-Dhaka monsoon flooding) from a starting point to a shelter, while water
-keeps RISING the longer the agent takes.
+Static Flood Rescue GridWorld - RL Assignment
+-------------------------------------------------
+Scenario: A rescue boat must travel from a relief camp to an evacuation
+shelter across a flooded Dhaka neighborhood. Unlike a rising-flood version,
+the flood extent here is FIXED (static) - some cells are permanently deep
+water (impassable/dangerous), some are shallow water (passable but slower/
+riskier), and the rest are dry land. This keeps the environment a simple,
+standard, stationary MDP: state = just the boat's grid position.
 
-Environment design:
-- Grid: 6x6 cells
-- Start: top-left (0,0)  -> the rescue boat's launch point
-- Shelter (goal): bottom-right (5,5) -> reward +10, terminal, always safe
-- Flood source: a fixed cell where flooding originates
-- Flood grows outward by 1 "ring" (Manhattan distance) every timestep the
-  agent takes. So the flood_stage increases every action, capped at MAX_STAGE.
-- Cell types (computed from distance to flood source, given current stage):
-    deep water    -> distance <= stage   -> TERMINAL, reward -10 (boat capsizes)
-    shallow water -> distance == stage+1 -> reward -0.3 (passable but risky/slow)
-    dry land      -> otherwise            -> reward -0.04 (normal cost)
+Grid legend:
+    S = start (relief camp)
+    G = goal (evacuation shelter)
+    X = deep water (terminal, boat capsizes, reward -10)
+    ~ = shallow water (passable, reward -0.3)
+    . = dry land (passable, reward -0.04)
 
-State = (row, col, flood_stage)  -- this keeps the environment Markovian:
-given the current state and action, the next state and reward are fully
-determined (flood_stage always advances by exactly 1 per action, capped).
+  S . . . . .
+  . . ~ X ~ .
+  . ~ X X X ~
+  . ~ X X X ~
+  . . ~ X ~ .
+  . . . . . G
 
-Because flood_stage saturates at MAX_STAGE, this is a valid stationary MDP
-(no need for special finite-horizon handling) so normal discounted
-Value Iteration and normal Q-learning both apply directly.
-
-We compare Value Iteration and Q-Learning across different discount factors
-(gamma) and visualize the ACTUAL PATH each resulting policy takes from start
-to goal, plus how much of the grid is flooded by the time it gets there.
+We solve this MDP with Value Iteration and Q-Learning, and compare the
+results across different discount factors (gamma) and, for Q-learning,
+different learning rates (alpha).
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import random
 
 # ---------------------------------------------------------
@@ -41,10 +37,24 @@ import random
 GRID_SIZE = 6
 START = (0, 0)
 GOAL = (5, 5)
-FLOOD_SOURCE = (1, 4)  # off the main diagonal, threatens a shortcut without ever reaching start/goal
-FLOOD_INTERVAL = 3    # flood advances by 1 ring every this many agent actions
-MAX_STAGE = 3         # flood radius caps here (source is distance 5 from both start & goal, so they stay dry)
-T_MAX = 20            # elapsed-steps counter saturates here (state stays finite)
+
+DEEP_WATER = {
+    (1, 3),
+    (2, 3),
+    (3, 3)
+}
+
+SHALLOW_WATER = {
+    (2, 1),
+    (2, 2),
+    (3, 2),
+    (4, 2),
+    (4, 3),
+    (4, 4)
+}
+
+# DEEP_WATER = {(1, 3), (2, 2), (2, 3), (2, 4), (3, 2), (3, 3), (3, 4), (4, 3)}
+# SHALLOW_WATER = {(1, 2), (1, 4), (2, 1), (2, 5), (3, 1), (3, 5), (4, 2), (4, 4)}
 
 ACTIONS = ["up", "down", "left", "right"]
 ACTION_MOVES = {
@@ -55,42 +65,27 @@ ACTION_MOVES = {
 }
 
 STEP_REWARD = -0.04
-SHALLOW_REWARD = -0.3
+SHALLOW_REWARD = -0.05 #0.3
 DEEP_REWARD = -10
 GOAL_REWARD = 10
 
 
-def manhattan(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
-
-
-def stage_from_t(t):
-    return min(t // FLOOD_INTERVAL, MAX_STAGE)
-
-
-def cell_type(pos, t):
-    """Return 'deep', 'shallow', or 'dry' for a cell at a given elapsed-time t."""
+def cell_type(pos):
     if pos == GOAL:
         return "goal"
-    stage = stage_from_t(t)
-    d = manhattan(pos, FLOOD_SOURCE)
-    if d <= stage:
+    if pos in DEEP_WATER:
         return "deep"
-    elif d == stage + 1:
+    if pos in SHALLOW_WATER:
         return "shallow"
-    else:
-        return "dry"
+    return "dry"
 
 
 def all_states():
-    return [(r, c, t) for r in range(GRID_SIZE) for c in range(GRID_SIZE)
-            for t in range(T_MAX + 1)]
+    return [(r, c) for r in range(GRID_SIZE) for c in range(GRID_SIZE)]
 
 
 def is_terminal(state):
-    r, c, t = state
-    pos = (r, c)
-    return pos == GOAL or cell_type(pos, t) == "deep"
+    return state == GOAL or state in DEEP_WATER
 
 
 def step(state, action):
@@ -98,15 +93,14 @@ def step(state, action):
     if is_terminal(state):
         return state, 0
 
-    r, c, t = state
+    r, c = state
     dr, dc = ACTION_MOVES[action]
     nr, nc = r + dr, c + dc
     if nr < 0 or nr >= GRID_SIZE or nc < 0 or nc >= GRID_SIZE:
         nr, nc = r, c  # wall -> stay
 
-    next_t = min(t + 1, T_MAX)
-    next_pos = (nr, nc)
-    ctype = cell_type(next_pos, next_t)
+    next_state = (nr, nc)
+    ctype = cell_type(next_state)
 
     if ctype == "goal":
         reward = GOAL_REWARD
@@ -117,7 +111,7 @@ def step(state, action):
     else:
         reward = STEP_REWARD
 
-    return (nr, nc, next_t), reward
+    return next_state, reward
 
 
 # ---------------------------------------------------------
@@ -161,14 +155,18 @@ def value_iteration(gamma, theta=1e-4, max_iter=1000):
 
 
 # ---------------------------------------------------------
-# 3. Q-LEARNING
+# 3. Q-LEARNING (with epsilon-decay for cleaner convergence)
 # ---------------------------------------------------------
-def q_learning(gamma, alpha=0.1, epsilon=0.2, episodes=4000, max_steps=25):
+def q_learning(gamma, alpha=0.1, epsilon_start=0.3, epsilon_end=0.02,
+               episodes=3000, max_steps=25):
     Q = {(s, a): 0.0 for s in all_states() for a in ACTIONS}
     reward_history = []
 
     for ep in range(episodes):
-        s = (START[0], START[1], 0)
+        frac = ep / max(episodes - 1, 1)
+        epsilon = epsilon_start + (epsilon_end - epsilon_start) * frac
+
+        s = START
         total_reward = 0
         for t in range(max_steps):
             if random.random() < epsilon:
@@ -199,10 +197,10 @@ def q_learning(gamma, alpha=0.1, epsilon=0.2, episodes=4000, max_steps=25):
 
 
 # ---------------------------------------------------------
-# 4. PATH TRACING (follow greedy policy from start to goal/failure)
+# 4. PATH TRACING
 # ---------------------------------------------------------
 def trace_path(policy, max_steps=25):
-    s = (START[0], START[1], 0)
+    s = START
     path = [s]
     rewards = []
     for t in range(max_steps):
@@ -214,10 +212,9 @@ def trace_path(policy, max_steps=25):
         path.append(s_next)
         s = s_next
 
-    r, c, t_final = s
-    if (r, c) == GOAL:
+    if s == GOAL:
         outcome = "REACHED SHELTER"
-    elif cell_type((r, c), t_final) == "deep":
+    elif s in DEEP_WATER:
         outcome = "BOAT CAPSIZED (deep water)"
     else:
         outcome = "DID NOT FINISH (ran out of steps)"
@@ -235,63 +232,67 @@ COLOR_GOAL = "#2e7d32"
 COLOR_START = "#f9a825"
 
 
-def plot_flood_stages(filename):
-    # pick t values that land on each flood ring (t = stage * FLOOD_INTERVAL)
-    t_to_show = [0, FLOOD_INTERVAL * 1, FLOOD_INTERVAL * 2, FLOOD_INTERVAL * MAX_STAGE]
-    fig, axes = plt.subplots(1, len(t_to_show), figsize=(4 * len(t_to_show), 4.3))
-    for ax, t in zip(axes, t_to_show):
-        for r in range(GRID_SIZE):
-            for c in range(GRID_SIZE):
-                ctype = cell_type((r, c), t)
-                color = {"dry": COLOR_DRY, "shallow": COLOR_SHALLOW,
-                         "deep": COLOR_DEEP, "goal": COLOR_GOAL}[ctype]
-                if (r, c) == START:
-                    color = COLOR_START
-                ax.add_patch(plt.Rectangle((c, r), 1, 1, facecolor=color, edgecolor="gray"))
-        ax.set_xlim(0, GRID_SIZE)
-        ax.set_ylim(0, GRID_SIZE)
-        ax.invert_yaxis()
-        ax.set_title(f"After {t} steps (flood ring={stage_from_t(t)})", fontsize=10)
-        ax.set_xticks([])
-        ax.set_yticks([])
+def draw_grid(ax):
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            ctype = cell_type((r, c))
+            color = {"dry": COLOR_DRY, "shallow": COLOR_SHALLOW,
+                     "deep": COLOR_DEEP, "goal": COLOR_GOAL}[ctype]
+            ax.add_patch(plt.Rectangle((c, r), 1, 1, facecolor=color, edgecolor="gray"))
+    ax.set_xlim(0, GRID_SIZE)
+    ax.set_ylim(0, GRID_SIZE)
+    ax.invert_yaxis()
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
+def plot_static_map(filename):
+    fig, ax = plt.subplots(figsize=(5, 5))
+    draw_grid(ax)
+    ax.plot(START[1] + 0.5, START[0] + 0.5, marker="s", color=COLOR_START,
+            markersize=16, markeredgecolor="black", zorder=6)
+    ax.set_title("Flooded Neighborhood Map (static)")
+    import matplotlib.patches as mpatches
     patches = [
-        mpatches.Patch(color=COLOR_START, label="Start"),
+        mpatches.Patch(color=COLOR_START, label="Start (relief camp)"),
         mpatches.Patch(color=COLOR_DRY, label="Dry land"),
         mpatches.Patch(color=COLOR_SHALLOW, label="Shallow water"),
         mpatches.Patch(color=COLOR_DEEP, label="Deep water (danger)"),
         mpatches.Patch(color=COLOR_GOAL, label="Shelter (goal)"),
     ]
-    fig.legend(handles=patches, loc="lower center", ncol=5, fontsize=9)
-    plt.tight_layout(rect=[0, 0.06, 1, 1])
+    fig.legend(handles=patches, loc="lower center", ncol=2, fontsize=9)
+    plt.tight_layout(rect=[0, 0.14, 1, 1])
     plt.savefig(filename, dpi=150)
     plt.close()
     print(f"Saved: {filename}")
 
 
 def plot_paths(paths, titles, outcomes, filename):
-    fig, axes = plt.subplots(1, len(paths), figsize=(4.2 * len(paths), 4.6))
+    fig, axes = plt.subplots(1, len(paths), figsize=(4.4 * len(paths), 4.8))
     if len(paths) == 1:
         axes = [axes]
     for ax, path, title, outcome in zip(axes, paths, titles, outcomes):
-        final_t = path[-1][2]
-        for r in range(GRID_SIZE):
-            for c in range(GRID_SIZE):
-                ctype = cell_type((r, c), final_t)
-                color = {"dry": COLOR_DRY, "shallow": COLOR_SHALLOW,
-                         "deep": COLOR_DEEP, "goal": COLOR_GOAL}[ctype]
-                ax.add_patch(plt.Rectangle((c, r), 1, 1, facecolor=color, edgecolor="gray"))
+        draw_grid(ax)
 
-        xs = [p[1] + 0.5 for p in path]
-        ys = [p[0] + 0.5 for p in path]
-        ax.plot(xs, ys, color="black", linewidth=2, marker="o", markersize=5, zorder=5)
-        ax.plot(xs[0], ys[0], marker="s", color=COLOR_START, markersize=12,
+        visit_count = {}
+        xs, ys = [], []
+        for p in path:
+            n = visit_count.get(p, 0)
+            visit_count[p] = n + 1
+            offset_x = 0.12 * n * (1 if (p[0] + p[1]) % 2 == 0 else -1)
+            offset_y = 0.12 * n * (1 if p[0] % 2 == 0 else -1)
+            xs.append(p[1] + 0.5 + offset_x)
+            ys.append(p[0] + 0.5 + offset_y)
+
+        ax.plot(xs, ys, color="black", linewidth=1.6, zorder=4, alpha=0.8)
+        ax.scatter(xs, ys, c=range(len(xs)), cmap="autumn_r", s=55,
+                   edgecolors="black", linewidths=0.6, zorder=5)
+        for i, (x, y) in enumerate(zip(xs, ys)):
+            ax.annotate(str(i), (x, y), fontsize=6.5, ha="center", va="center",
+                        zorder=6, fontweight="bold")
+
+        ax.plot(xs[0], ys[0], marker="s", color=COLOR_START, markersize=14,
                 markeredgecolor="black", zorder=6)
-
-        ax.set_xlim(0, GRID_SIZE)
-        ax.set_ylim(0, GRID_SIZE)
-        ax.invert_yaxis()
-        ax.set_xticks([])
-        ax.set_yticks([])
         ax.set_title(f"{title}\n{outcome} ({len(path)-1} steps)", fontsize=10)
     plt.tight_layout()
     plt.savefig(filename, dpi=150)
@@ -320,7 +321,7 @@ if __name__ == "__main__":
     random.seed(0)
     np.random.seed(0)
 
-    plot_flood_stages("flood_stages.png")
+    plot_static_map("static_flood_map.png")
 
     gammas = [0.1, 0.5, 0.9, 0.99]
 
@@ -351,7 +352,7 @@ if __name__ == "__main__":
 
     ql_paths, ql_titles, ql_outcomes, ql_reward_histories = [], [], [], []
     for g in gammas:
-        Q, policy, reward_history = q_learning(gamma=g, alpha=0.1, epsilon=0.2, episodes=3000)
+        Q, policy, reward_history = q_learning(gamma=g, alpha=0.1, episodes=3000)
         path, total_r, outcome = trace_path(policy)
         print(f"gamma={g:<5} steps={len(path)-1:<4} total_reward={total_r:.2f}  outcome={outcome}")
         ql_paths.append(path)
@@ -377,7 +378,7 @@ if __name__ == "__main__":
     alphas = [0.01, 0.1, 0.5]
     alpha_paths, alpha_titles, alpha_outcomes, alpha_reward_histories = [], [], [], []
     for a in alphas:
-        Q, policy, reward_history = q_learning(gamma=0.9, alpha=a, epsilon=0.2, episodes=3000)
+        Q, policy, reward_history = q_learning(gamma=0.9, alpha=a, episodes=3000)
         path, total_r, outcome = trace_path(policy)
         print(f"alpha={a:<5} steps={len(path)-1:<4} total_reward={total_r:.2f}  outcome={outcome}")
         alpha_paths.append(path)
