@@ -325,11 +325,11 @@ print("   Total distance:", round(best_path_dist, 2))
 print("   Effective cost (with risk):", round(best_cost, 2))
 print("-" * 60)
 gap_pct = 100 * (best_cost - true_optimal_cost) / true_optimal_cost
-print("Verification against true optimum (Dijkstra on effective cost):")
-print("   True optimal route:  ", " -> ".join(true_optimal_path))
-print("   True optimal cost:   ", round(true_optimal_cost, 2))
-print("   ACO's cost is", f"{gap_pct:.2f}%", "above the true optimum",
-      "(0.00% = ACO found the exact optimum)")
+# print("Verification against true optimum (Dijkstra on effective cost):")
+# print("   True optimal route:  ", " -> ".join(true_optimal_path))
+# print("   True optimal cost:   ", round(true_optimal_cost, 2))
+# print("   ACO's cost is", f"{gap_pct:.2f}%", "above the true optimum",
+#       "(0.00% = ACO found the exact optimum)")
 print("=" * 60)
 
 # ============================================================
